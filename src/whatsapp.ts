@@ -1,6 +1,8 @@
 import makeWASocket, {
   useMultiFileAuthState,
+  fetchLatestWaWebVersion,
   DisconnectReason,
+  Browsers,
   type WASocket,
   type WAMessage,
 } from '@whiskeysockets/baileys';
@@ -26,8 +28,13 @@ export class WhatsAppClient {
   async connect(): Promise<void> {
     const { state, saveCreds } = await useMultiFileAuthState(this.options.authStatePath);
 
+    const { version } = await fetchLatestWaWebVersion({});
+    logger.info({ version }, 'using WA Web version');
+
     this.socket = makeWASocket({
       auth: state,
+      version,
+      browser: Browsers.macOS('Chrome'),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       logger: pino({ level: 'silent' }) as any,
     });
