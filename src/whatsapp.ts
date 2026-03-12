@@ -5,6 +5,7 @@ import makeWASocket, {
   type WAMessage,
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
+import qrcode from 'qrcode-terminal';
 import pino from 'pino';
 
 const logger = pino({ name: 'whatsapp' });
@@ -27,14 +28,19 @@ export class WhatsAppClient {
 
     this.socket = makeWASocket({
       auth: state,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       logger: pino({ level: 'silent' }) as any,
-      printQRInTerminal: true,
     });
 
     this.socket.ev.on('creds.update', saveCreds);
 
     this.socket.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
+      const { connection, lastDisconnect, qr } = update;
+
+      if (qr) {
+        logger.info('scan QR code to authenticate:');
+        qrcode.generate(qr, { small: true });
+      }
 
       if (connection === 'close') {
         const reason = (lastDisconnect?.error as Boom)?.output?.statusCode;
