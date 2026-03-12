@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.npmrc
+auth-state/
+data/
+docs/
+*.ogg
+*.wav
+/tmp/
