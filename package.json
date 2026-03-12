@@ -22,7 +22,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "@whiskeysockets/baileys": "^6.7.21",
     "openai": "^6.27.0",
     "pino": "^10.3.1",
     "qrcode-terminal": "^0.12.0"

@@ -49,7 +49,9 @@ export class WhatsAppClient {
         logger.warn({ reason, shouldReconnect }, 'connection closed');
 
         if (shouldReconnect) {
-          this.connect();
+          const delay = reason === 405 ? 5000 : 2000;
+          logger.info({ delay }, 'reconnecting...');
+          setTimeout(() => this.connect(), delay);
         } else {
           logger.error('logged out permanently — re-scan QR code');
         }
