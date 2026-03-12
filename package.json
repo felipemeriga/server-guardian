@@ -8,8 +8,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "npx tsx src/index.ts",
+    "start": "node --env-file .env dist/index.js",
+    "dev": "npx tsx --env-file .env src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/ tests/",
