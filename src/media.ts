@@ -1,4 +1,4 @@
-import { writeFile, unlink, readFile } from 'fs/promises';
+import { writeFile, unlink, readFile, readdir } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { downloadMediaMessage, type WAMessage } from '@whiskeysockets/baileys';
 import OpenAI from 'openai';
@@ -84,12 +84,11 @@ export async function cleanupTempFile(path: string): Promise<void> {
 }
 
 export async function cleanupStaleTempFiles(): Promise<void> {
-  const { readdir, unlink: rm } = await import('fs/promises');
   try {
     const files = await readdir('/tmp');
     for (const f of files) {
       if (f.startsWith('wa-img-') || f.startsWith('wa-voice-')) {
-        await rm(`/tmp/${f}`);
+        await unlink(`/tmp/${f}`);
         logger.info({ file: f }, 'cleaned up stale temp file');
       }
     }

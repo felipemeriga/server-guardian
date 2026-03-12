@@ -29,32 +29,39 @@ async function main() {
   await scheduler.load();
 
   async function processMessage(text: string, jid: string, filePath?: string) {
-    bridge.recordInvocation();
-    const reset = bridge.consumeReset();
+    let currentText = text;
+    let currentJid = jid;
+    let currentFilePath = filePath;
 
-    try {
-      const response = await claude.send(text, { reset, filePath });
+    while (true) {
+      bridge.recordInvocation();
+      const reset = bridge.consumeReset();
 
-      const chunks = chunkText(response, config.chunkSize);
-      for (let i = 0; i < chunks.length; i++) {
-        await whatsapp.sendMessage(jid, chunks[i]);
-        if (i < chunks.length - 1) {
-          await sleep(config.chunkDelayMs);
+      try {
+        const response = await claude.send(currentText, { reset, filePath: currentFilePath });
+
+        const chunks = chunkText(response, config.chunkSize);
+        for (let i = 0; i < chunks.length; i++) {
+          await whatsapp.sendMessage(currentJid, chunks[i]);
+          if (i < chunks.length - 1) {
+            await sleep(config.chunkDelayMs);
+          }
         }
+      } catch (err) {
+        logger.error({ err }, 'claude invocation failed');
+        await whatsapp.sendMessage(currentJid, `Error: ${(err as Error).message}`);
       }
-    } catch (err) {
-      logger.error({ err }, 'claude invocation failed');
-      await whatsapp.sendMessage(jid, `Error: ${(err as Error).message}`);
-    }
 
-    if (filePath) {
-      await cleanupTempFile(filePath);
-    }
+      if (currentFilePath) {
+        await cleanupTempFile(currentFilePath);
+      }
 
-    // Process queued messages
-    const next = bridge.dequeue();
-    if (next) {
-      await processMessage(next.text, next.jid, next.filePath);
+      // Process next queued message
+      const next = bridge.dequeue();
+      if (!next) break;
+      currentText = next.text;
+      currentJid = next.jid;
+      currentFilePath = next.filePath;
     }
   }
 
@@ -176,17 +183,17 @@ async function main() {
 
   // Start scheduler
   scheduler.startWatching((prompt) => {
-    const jid = config.allowedNumbers[0]; // Send to primary number
+    const jid = config.allowedNumbers[0];
+    if (claude.isBusy()) {
+      logger.warn('scheduler fired but Claude is busy, queuing scheduled prompt');
+      bridge.enqueue({ text: prompt, jid });
+      return;
+    }
     void (async () => {
       try {
-        const response = await claude.send(prompt);
-        const chunks = chunkText(response, config.chunkSize);
-        for (let i = 0; i < chunks.length; i++) {
-          await whatsapp.sendMessage(jid, chunks[i]);
-          if (i < chunks.length - 1) {
-            await sleep(config.chunkDelayMs);
-          }
-        }
+        await whatsapp.sendTyping(jid);
+        await processMessage(prompt, jid);
+        await whatsapp.stopTyping(jid);
       } catch (err) {
         logger.error({ err }, 'scheduled task failed');
       }

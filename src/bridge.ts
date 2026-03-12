@@ -1,7 +1,4 @@
-import pino from 'pino';
 import type { Config } from './config.js';
-
-const logger = pino({ name: 'bridge' });
 
 export interface QueuedMessage {
   text: string;
