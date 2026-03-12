@@ -49,9 +49,7 @@ export class Scheduler {
     }
 
     // Remove one-shot entries that fired
-    this.entries = this.entries.filter(
-      (e) => !due.includes(e) || e.repeat !== null
-    );
+    this.entries = this.entries.filter((e) => !due.includes(e) || e.repeat !== null);
 
     if (due.length > 0) {
       this.persist();

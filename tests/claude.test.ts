@@ -2,19 +2,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClaudeManager } from '../src/claude.js';
 
 // We test by mocking child_process.spawn
-vi.mock('child_process', () => {
-  const { EventEmitter } = require('events');
-  const { Readable } = require('stream');
+vi.mock('child_process', async () => {
+  const { EventEmitter } = await import('events');
+  const { Readable } = await import('stream');
 
   function createMockProcess(stdout: string, exitCode = 0) {
-    const proc = new EventEmitter() as any;
+    const proc = new EventEmitter() as ReturnType<typeof EventEmitter.prototype.on> & {
+      stdout: import('stream').Readable;
+      stderr: import('stream').Readable;
+      kill: ReturnType<typeof vi.fn>;
+    };
     const readable = new Readable({ read() {} });
     readable.push(stdout);
     readable.push(null);
-    proc.stdout = readable;
-    proc.stderr = new Readable({ read() {} });
-    proc.stderr.push(null);
-    proc.kill = vi.fn();
+    (proc as Record<string, unknown>).stdout = readable;
+    const stderrReadable = new Readable({ read() {} });
+    stderrReadable.push(null);
+    (proc as Record<string, unknown>).stderr = stderrReadable;
+    (proc as Record<string, unknown>).kill = vi.fn();
     setTimeout(() => proc.emit('close', exitCode), 10);
     return proc;
   }
@@ -22,8 +27,8 @@ vi.mock('child_process', () => {
   return {
     spawn: vi.fn(() =>
       createMockProcess(
-        '{"type":"assistant","message":{"content":[{"type":"text","text":"Hello from Claude"}]}}\n'
-      )
+        '{"type":"assistant","message":{"content":[{"type":"text","text":"Hello from Claude"}]}}\n',
+      ),
     ),
   };
 });
@@ -50,6 +55,7 @@ describe('ClaudeManager', () => {
   it('sends without --continue when reset is true', async () => {
     const { spawn } = await import('child_process');
     await manager.send('hello', { reset: true });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const call = (spawn as any).mock.calls.at(-1);
     expect(call[1]).not.toContain('--continue');
   });

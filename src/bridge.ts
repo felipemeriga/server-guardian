@@ -65,9 +65,7 @@ export class Bridge {
     const hours = Math.floor(uptime / 3600);
     const minutes = Math.floor((uptime % 3600) / 60);
     const seconds = uptime % 60;
-    const lastInv = this.lastInvocation
-      ? this.lastInvocation.toISOString()
-      : 'never';
+    const lastInv = this.lastInvocation ? this.lastInvocation.toISOString() : 'never';
 
     return [
       `Uptime: ${hours}h ${minutes}m ${seconds}s`,

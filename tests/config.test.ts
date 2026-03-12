@@ -19,7 +19,8 @@ describe('config', () => {
   });
 
   it('parses comma-separated allowed numbers', async () => {
-    process.env.WHATSAPP_ALLOWED_NUMBERS = '5511999999999@s.whatsapp.net,5511888888888@s.whatsapp.net';
+    process.env.WHATSAPP_ALLOWED_NUMBERS =
+      '5511999999999@s.whatsapp.net,5511888888888@s.whatsapp.net';
     const { getConfig } = await import('../src/config.js');
     const config = getConfig();
     expect(config.allowedNumbers).toEqual([

@@ -36,7 +36,12 @@ describe('Scheduler', () => {
 
   it('fires callback for due entries', async () => {
     const entries: SchedulerEntry[] = [
-      { id: '1', time: new Date(Date.now() - 1000).toISOString(), prompt: 'fire now', repeat: null },
+      {
+        id: '1',
+        time: new Date(Date.now() - 1000).toISOString(),
+        prompt: 'fire now',
+        repeat: null,
+      },
     ];
     await writeFile(testPath, JSON.stringify(entries));
 
@@ -51,7 +56,12 @@ describe('Scheduler', () => {
 
   it('removes one-shot entries after firing', async () => {
     const entries: SchedulerEntry[] = [
-      { id: '1', time: new Date(Date.now() - 1000).toISOString(), prompt: 'fire once', repeat: null },
+      {
+        id: '1',
+        time: new Date(Date.now() - 1000).toISOString(),
+        prompt: 'fire once',
+        repeat: null,
+      },
     ];
     await writeFile(testPath, JSON.stringify(entries));
 

@@ -66,11 +66,7 @@ async function main() {
   }
 
   function getMessageText(msg: WAMessage): string | null {
-    return (
-      msg.message?.conversation ||
-      msg.message?.extendedTextMessage?.text ||
-      null
-    );
+    return msg.message?.conversation || msg.message?.extendedTextMessage?.text || null;
   }
 
   function hasImage(msg: WAMessage): boolean {
@@ -125,7 +121,7 @@ async function main() {
         if (enqueued) {
           await whatsapp.sendMessage(
             jid,
-            `Processing previous message, yours is queued (position ${bridge.queueSize()}).`
+            `Processing previous message, yours is queued (position ${bridge.queueSize()}).`,
           );
         } else {
           await whatsapp.sendMessage(jid, 'Queue full, try again shortly.');
