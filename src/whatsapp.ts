@@ -23,7 +23,6 @@ export class WhatsAppClient {
   private socket: WASocket | null = null;
   private options: WhatsAppClientOptions;
   private sentMessageIds = new Set<string>();
-  private lastProcessedAt = 0;
 
   constructor(options: WhatsAppClientOptions) {
     this.options = options;
@@ -103,15 +102,18 @@ export class WhatsAppClient {
           );
         if (isProtocolOnly) continue;
 
-        if (msg.message) {
-          // Throttle: same message arrives on multiple JIDs within milliseconds.
-          // Only process the first one in any 3s window.
-          const now = Date.now();
-          if (now - this.lastProcessedAt < 3000) {
-            logger.info({ msgId }, 'skipping duplicate (within 3s window)');
+        // In self-chat mode, the same message arrives twice:
+        //   1. fromMe:true on @lid (real content)
+        //   2. fromMe:false on @s.whatsapp.net (echo)
+        // Only process LID messages for self-chat; skip the @s.whatsapp.net echo.
+        if (this.options.selfJid) {
+          const jid = msg.key.remoteJid || '';
+          if (!jid.endsWith('@lid') && !jid.endsWith('@g.us')) {
             continue;
           }
-          this.lastProcessedAt = now;
+        }
+
+        if (msg.message) {
           this.options.onMessage(msg);
         }
       }
