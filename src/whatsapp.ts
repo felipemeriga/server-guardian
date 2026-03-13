@@ -23,7 +23,7 @@ export class WhatsAppClient {
   private socket: WASocket | null = null;
   private options: WhatsAppClientOptions;
   private sentMessageIds = new Set<string>();
-  private processedMessageIds = new Set<string>();
+  private recentMessages = new Map<string, number>();
 
   constructor(options: WhatsAppClientOptions) {
     this.options = options;
@@ -89,8 +89,8 @@ export class WhatsAppClient {
           'message details',
         );
 
-        // Deduplicate: skip if already processed or sent by this bot
-        if (this.sentMessageIds.has(msgId) || this.processedMessageIds.has(msgId)) {
+        // Skip messages sent by this bot
+        if (this.sentMessageIds.has(msgId)) {
           this.sentMessageIds.delete(msgId);
           continue;
         }
@@ -104,12 +104,27 @@ export class WhatsAppClient {
         if (isProtocolOnly) continue;
 
         if (msg.message) {
-          this.processedMessageIds.add(msgId);
-          // Prevent unbounded growth
-          if (this.processedMessageIds.size > 1000) {
-            const first = this.processedMessageIds.values().next().value!;
-            this.processedMessageIds.delete(first);
+          // Deduplicate: same message arrives on multiple JIDs with different IDs.
+          // Use message text + timestamp as dedup key within a 5s window.
+          const text =
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            msg.message.imageMessage?.caption ||
+            '';
+          const ts = Number(msg.messageTimestamp || 0);
+          const dedupeKey = `${text}:${ts}`;
+          const now = Date.now();
+
+          if (this.recentMessages.has(dedupeKey)) {
+            continue;
           }
+
+          this.recentMessages.set(dedupeKey, now);
+          // Prune entries older than 10s
+          for (const [key, time] of this.recentMessages) {
+            if (now - time > 10_000) this.recentMessages.delete(key);
+          }
+
           this.options.onMessage(msg);
         }
       }
