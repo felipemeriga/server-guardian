@@ -20,6 +20,7 @@ export interface WhatsAppClientOptions {
 export class WhatsAppClient {
   private socket: WASocket | null = null;
   private options: WhatsAppClientOptions;
+  private sentMessageIds = new Set<string>();
 
   constructor(options: WhatsAppClientOptions) {
     this.options = options;
@@ -67,9 +68,22 @@ export class WhatsAppClient {
       }
     });
 
-    this.socket.ev.on('messages.upsert', ({ messages }) => {
+    this.socket.ev.on('messages.upsert', ({ messages, type }) => {
+      logger.info({ count: messages.length, type }, 'messages.upsert received');
       for (const msg of messages) {
-        if (!msg.key.fromMe && msg.message) {
+        const msgId = msg.key.id || '';
+        logger.info(
+          { fromMe: msg.key.fromMe, jid: msg.key.remoteJid, hasMessage: !!msg.message, msgId },
+          'message details',
+        );
+
+        // Skip messages sent by this bot (avoid infinite loop)
+        if (this.sentMessageIds.has(msgId)) {
+          this.sentMessageIds.delete(msgId);
+          continue;
+        }
+
+        if (msg.message) {
           this.options.onMessage(msg);
         }
       }
@@ -78,7 +92,10 @@ export class WhatsAppClient {
 
   async sendMessage(jid: string, text: string): Promise<void> {
     if (!this.socket) throw new Error('WhatsApp not connected');
-    await this.socket.sendMessage(jid, { text });
+    const sent = await this.socket.sendMessage(jid, { text });
+    if (sent?.key.id) {
+      this.sentMessageIds.add(sent.key.id);
+    }
   }
 
   async sendTyping(jid: string): Promise<void> {
