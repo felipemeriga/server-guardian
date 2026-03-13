@@ -6,23 +6,28 @@ RUN npm install -g @anthropic-ai/claude-code
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci --production=false
+RUN npm ci
+
+ARG WHATSAPP_ALLOWED_NUMBERS
+ARG ANTHROPIC_API_KEY
+ARG OPENAI_API_KEY
+ARG CLAUDE_CWD=/root
+ARG AUTH_STATE_PATH=./auth-state
+ARG SCHEDULER_PATH=./data/scheduler.json
+
+ENV WHATSAPP_ALLOWED_NUMBERS=$WHATSAPP_ALLOWED_NUMBERS
+ENV ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
+ENV OPENAI_API_KEY=$OPENAI_API_KEY
+ENV CLAUDE_CWD=$CLAUDE_CWD
+ENV AUTH_STATE_PATH=$AUTH_STATE_PATH
+ENV SCHEDULER_PATH=$SCHEDULER_PATH
 
 COPY tsconfig.json ./
 COPY src/ src/
 
 RUN npm run build
-
-# Clean dev dependencies
 RUN npm prune --production
 
-# Environment variables injected by docker-compose
-ENV WHATSAPP_ALLOWED_NUMBERS=""
-ENV ANTHROPIC_API_KEY=""
-ENV OPENAI_API_KEY=""
-ENV CLAUDE_CWD="/root"
-
-# Auth state and scheduler data persist via volumes
 VOLUME ["/app/auth-state", "/app/data"]
 
 CMD ["node", "dist/index.js"]
