@@ -78,7 +78,12 @@ async function main() {
   }
 
   function getSenderJid(msg: WAMessage): string {
-    return msg.key.remoteJid || '';
+    const jid = msg.key.remoteJid || '';
+    // If message is fromMe with a LID, use the first allowed number for replies
+    if (msg.key.fromMe && jid.endsWith('@lid')) {
+      return config.allowedNumbers[0];
+    }
+    return jid;
   }
 
   const whatsapp = new WhatsAppClient({
@@ -92,7 +97,8 @@ async function main() {
     const jid = getSenderJid(msg);
     logger.info({ jid }, 'incoming message');
 
-    if (!bridge.isAllowed(jid)) {
+    // fromMe messages are from the account owner (linked device), always allowed
+    if (!msg.key.fromMe && !bridge.isAllowed(jid)) {
       logger.warn({ jid }, 'message from non-allowed number, ignoring');
       return;
     }
