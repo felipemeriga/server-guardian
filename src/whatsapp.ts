@@ -1,11 +1,7 @@
-import makeWASocket, {
-  useMultiFileAuthState,
-  fetchLatestWaWebVersion,
-  DisconnectReason,
-  Browsers,
-  type WASocket,
-  type WAMessage,
-} from '@whiskeysockets/baileys';
+import baileys from '@whiskeysockets/baileys';
+const { makeWASocket, useMultiFileAuthState, fetchLatestWaWebVersion, DisconnectReason, Browsers } =
+  baileys;
+import type { WASocket, WAMessage } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
@@ -37,7 +33,7 @@ export class WhatsAppClient {
       version,
       browser: Browsers.macOS('Chrome'),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      logger: pino({ level: 'silent' }) as any,
+      logger: pino({ level: 'error' }) as any,
     });
 
     this.socket.ev.on('creds.update', saveCreds);

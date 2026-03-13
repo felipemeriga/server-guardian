@@ -1,6 +1,8 @@
 import { writeFile, unlink, readFile, readdir } from 'fs/promises';
 import { randomUUID } from 'crypto';
-import { downloadMediaMessage, type WAMessage } from '@whiskeysockets/baileys';
+import baileys from '@whiskeysockets/baileys';
+const { downloadMediaMessage } = baileys;
+import type { WAMessage } from '@whiskeysockets/baileys';
 import OpenAI from 'openai';
 import pino from 'pino';
 
