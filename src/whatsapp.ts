@@ -23,6 +23,7 @@ export class WhatsAppClient {
   private socket: WASocket | null = null;
   private options: WhatsAppClientOptions;
   private sentMessageIds = new Set<string>();
+  private processedMessageIds = new Set<string>();
 
   constructor(options: WhatsAppClientOptions) {
     this.options = options;
@@ -88,8 +89,8 @@ export class WhatsAppClient {
           'message details',
         );
 
-        // Skip messages sent by this bot (avoid infinite loop)
-        if (this.sentMessageIds.has(msgId)) {
+        // Deduplicate: skip if already processed or sent by this bot
+        if (this.sentMessageIds.has(msgId) || this.processedMessageIds.has(msgId)) {
           this.sentMessageIds.delete(msgId);
           continue;
         }
@@ -102,12 +103,13 @@ export class WhatsAppClient {
           );
         if (isProtocolOnly) continue;
 
-        // In self-chat, skip the fromMe:false echo to avoid double processing
-        if (!msg.key.fromMe && this.options.selfJid && msg.key.remoteJid === this.options.selfJid) {
-          continue;
-        }
-
         if (msg.message) {
+          this.processedMessageIds.add(msgId);
+          // Prevent unbounded growth
+          if (this.processedMessageIds.size > 1000) {
+            const first = this.processedMessageIds.values().next().value!;
+            this.processedMessageIds.delete(first);
+          }
           this.options.onMessage(msg);
         }
       }
