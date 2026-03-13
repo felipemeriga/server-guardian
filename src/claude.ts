@@ -29,7 +29,7 @@ export class ClaudeManager {
     this.busy = true;
 
     try {
-      const args = ['-p', '--output-format', 'stream-json'];
+      const args = ['-p', '--verbose', '--output-format', 'stream-json'];
 
       if (!opts.reset) {
         args.push('--continue');
