@@ -13,6 +13,8 @@ import pino from 'pino';
 
 const logger = pino({ name: 'whatsapp' });
 
+const BOT_PREFIX = '[claude]';
+
 export interface WhatsAppClientOptions {
   authStatePath: string;
   selfJid?: string;
@@ -24,7 +26,6 @@ export class WhatsAppClient {
   private options: WhatsAppClientOptions;
   private selfLid: string | null = null;
   private connectedAt = 0;
-  private sentTexts = new Map<string, number>();
   private processedIds = new Set<string>();
 
   constructor(options: WhatsAppClientOptions) {
@@ -111,9 +112,9 @@ export class WhatsAppClient {
         const msgTs = Number(msg.messageTimestamp || 0);
         if (msgTs > 0 && msgTs < this.connectedAt - 5) continue;
 
-        // 5. Skip messages whose text matches something we recently sent
+        // 5. Skip bot's own messages (identified by prefix)
         const text = this.extractText(msg);
-        if (text && this.sentTexts.has(text)) continue;
+        if (text?.startsWith(BOT_PREFIX)) continue;
 
         // Track this ID
         this.processedIds.add(msgId);
@@ -135,12 +136,7 @@ export class WhatsAppClient {
 
   async sendMessage(jid: string, text: string): Promise<void> {
     if (!this.socket) throw new Error('WhatsApp not connected');
-
-    // Track sent text to ignore echoes
-    this.sentTexts.set(text, Date.now());
-    setTimeout(() => this.sentTexts.delete(text), 30_000);
-
-    await this.socket.sendMessage(jid, { text });
+    await this.socket.sendMessage(jid, { text: `${BOT_PREFIX} ${text}` });
   }
 
   async sendTyping(jid: string): Promise<void> {
