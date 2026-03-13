@@ -75,7 +75,10 @@ export class ClaudeManager {
 
   private spawnClaude(args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      const proc = spawn('claude', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      const proc = spawn('claude', args, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        cwd: process.env.CLAUDE_CWD || process.env.HOME,
+      });
       this.currentProcess = proc;
 
       let stdout = '';
