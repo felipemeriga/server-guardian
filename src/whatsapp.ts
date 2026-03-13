@@ -93,7 +93,15 @@ export class WhatsAppClient {
           continue;
         }
 
-        if (!msg.key.fromMe && msg.message) {
+        // Skip protocol-only messages (read receipts, etc.)
+        const isProtocolOnly =
+          msg.message &&
+          Object.keys(msg.message).every((k) =>
+            ['protocolMessage', 'messageContextInfo', 'senderKeyDistributionMessage'].includes(k),
+          );
+        if (isProtocolOnly) continue;
+
+        if (msg.message) {
           this.options.onMessage(msg);
         }
       }

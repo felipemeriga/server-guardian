@@ -99,15 +99,28 @@ async function main() {
     const jid = getSenderJid(msg);
     logger.info({ jid }, 'incoming message');
 
-    if (!bridge.isAllowed(jid)) {
+    if (!msg.key.fromMe && !bridge.isAllowed(jid)) {
       logger.warn({ jid }, 'message from non-allowed number, ignoring');
       return;
     }
 
-    await whatsapp.markRead(msg);
+    try {
+      await whatsapp.markRead(msg);
+    } catch (err) {
+      logger.warn({ err }, 'markRead failed, continuing');
+    }
 
     // Handle text messages
     const text = getMessageText(msg);
+    logger.info(
+      {
+        text,
+        hasImage: hasImage(msg),
+        hasAudio: hasAudio(msg),
+        messageKeys: Object.keys(msg.message || {}),
+      },
+      'message content',
+    );
 
     if (text) {
       // Check special commands
