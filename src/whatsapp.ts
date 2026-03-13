@@ -1,7 +1,11 @@
-import baileys from '@whiskeysockets/baileys';
-const { makeWASocket, useMultiFileAuthState, fetchLatestWaWebVersion, DisconnectReason, Browsers } =
-  baileys;
-import type { WASocket, WAMessage } from '@whiskeysockets/baileys';
+import makeWASocket, {
+  useMultiFileAuthState,
+  fetchLatestWaWebVersion,
+  DisconnectReason,
+  Browsers,
+  type WASocket,
+  type WAMessage,
+} from 'baileys';
 import { Boom } from '@hapi/boom';
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';

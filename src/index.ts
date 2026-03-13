@@ -12,7 +12,7 @@ import {
   cleanupTempFile,
   cleanupStaleTempFiles,
 } from './media.js';
-import type { WAMessage } from '@whiskeysockets/baileys';
+import type { WAMessage } from 'baileys';
 
 const logger = pino({ name: 'main' });
 
@@ -39,9 +39,11 @@ async function main() {
 
       try {
         const response = await claude.send(currentText, { reset, filePath: currentFilePath });
+        logger.info({ responseLength: response.length, jid: currentJid }, 'claude responded');
 
         const chunks = chunkText(response, config.chunkSize);
         for (let i = 0; i < chunks.length; i++) {
+          logger.info({ chunk: i + 1, total: chunks.length, jid: currentJid }, 'sending chunk');
           await whatsapp.sendMessage(currentJid, chunks[i]);
           if (i < chunks.length - 1) {
             await sleep(config.chunkDelayMs);
@@ -78,12 +80,7 @@ async function main() {
   }
 
   function getSenderJid(msg: WAMessage): string {
-    const jid = msg.key.remoteJid || '';
-    // If message is fromMe with a LID, use the first allowed number for replies
-    if (msg.key.fromMe && jid.endsWith('@lid')) {
-      return config.allowedNumbers[0];
-    }
-    return jid;
+    return msg.key.remoteJid || '';
   }
 
   const whatsapp = new WhatsAppClient({
