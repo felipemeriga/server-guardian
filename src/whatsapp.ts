@@ -1,5 +1,6 @@
 import makeWASocket, {
   useMultiFileAuthState,
+  makeCacheableSignalKeyStore,
   fetchLatestWaWebVersion,
   DisconnectReason,
   Browsers,
@@ -32,12 +33,19 @@ export class WhatsAppClient {
     const { version } = await fetchLatestWaWebVersion({});
     logger.info({ version }, 'using WA Web version');
 
+    const baileysLogger = pino({ level: 'silent' });
+
     this.socket = makeWASocket({
-      auth: state,
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, baileysLogger),
+      },
       version,
       browser: Browsers.macOS('Chrome'),
+      syncFullHistory: false,
+      markOnlineOnConnect: false,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      logger: pino({ level: 'error' }) as any,
+      logger: baileysLogger as any,
     });
 
     this.socket.ev.on('creds.update', saveCreds);
@@ -69,7 +77,9 @@ export class WhatsAppClient {
     });
 
     this.socket.ev.on('messages.upsert', ({ messages, type }) => {
-      logger.info({ count: messages.length, type }, 'messages.upsert received');
+      // Only process real-time messages, skip history sync
+      if (type !== 'notify') return;
+
       for (const msg of messages) {
         const msgId = msg.key.id || '';
         logger.info(

@@ -80,7 +80,12 @@ async function main() {
   }
 
   function getSenderJid(msg: WAMessage): string {
-    return msg.key.remoteJid || '';
+    const jid = msg.key.remoteJid || '';
+    // LID JIDs can't receive messages — resolve to the allowed number
+    if (jid.endsWith('@lid')) {
+      return config.allowedNumbers[0];
+    }
+    return jid;
   }
 
   const whatsapp = new WhatsAppClient({
@@ -100,7 +105,10 @@ async function main() {
       return;
     }
 
-    await whatsapp.markRead(msg);
+    // Skip markRead for self-chat (fromMe) to avoid protocol issues
+    if (!msg.key.fromMe) {
+      await whatsapp.markRead(msg);
+    }
 
     // Handle text messages
     const text = getMessageText(msg);
