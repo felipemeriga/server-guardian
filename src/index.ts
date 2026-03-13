@@ -90,6 +90,7 @@ async function main() {
 
   const whatsapp = new WhatsAppClient({
     authStatePath: config.authStatePath,
+    selfJid: config.allowedNumbers[0],
     onMessage: (msg: WAMessage) => {
       void handleMessage(msg);
     },

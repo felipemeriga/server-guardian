@@ -15,6 +15,7 @@ const logger = pino({ name: 'whatsapp' });
 
 export interface WhatsAppClientOptions {
   authStatePath: string;
+  selfJid?: string;
   onMessage: (msg: WAMessage) => void;
 }
 
@@ -100,6 +101,11 @@ export class WhatsAppClient {
             ['protocolMessage', 'messageContextInfo', 'senderKeyDistributionMessage'].includes(k),
           );
         if (isProtocolOnly) continue;
+
+        // In self-chat, skip the fromMe:false echo to avoid double processing
+        if (!msg.key.fromMe && this.options.selfJid && msg.key.remoteJid === this.options.selfJid) {
+          continue;
+        }
 
         if (msg.message) {
           this.options.onMessage(msg);
