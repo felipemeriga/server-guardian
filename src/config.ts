@@ -16,7 +16,10 @@ export function getConfig(): Config {
   }
 
   return {
-    allowedNumbers: allowedRaw.split(',').map((n) => n.trim()),
+    allowedNumbers: allowedRaw.split(',').map((n) => {
+      const trimmed = n.trim();
+      return trimmed.includes('@') ? trimmed : `${trimmed}@s.whatsapp.net`;
+    }),
     openaiApiKey: process.env.OPENAI_API_KEY,
     chunkSize: 4000,
     maxQueueSize: 5,

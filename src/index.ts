@@ -90,8 +90,10 @@ async function main() {
 
   async function handleMessage(msg: WAMessage) {
     const jid = getSenderJid(msg);
+    logger.info({ jid }, 'incoming message');
 
     if (!bridge.isAllowed(jid)) {
+      logger.warn({ jid }, 'message from non-allowed number, ignoring');
       return;
     }
 
