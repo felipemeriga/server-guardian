@@ -125,26 +125,20 @@ export class ClaudeManager {
 
   private parseStreamJson(raw: string): string {
     const lines = raw.trim().split('\n');
-    const texts: string[] = [];
 
+    // Only use the 'result' event — it contains the final response text.
+    // The 'assistant' event contains the same text, so capturing both causes duplication.
     for (const line of lines) {
       try {
         const event = JSON.parse(line);
-        if (event.type === 'assistant' && event.message?.content) {
-          for (const block of event.message.content) {
-            if (block.type === 'text') {
-              texts.push(block.text);
-            }
-          }
-        }
         if (event.type === 'result' && event.result) {
-          texts.push(event.result);
+          return event.result;
         }
       } catch {
         // skip non-JSON lines
       }
     }
 
-    return texts.join('\n') || raw;
+    return raw;
   }
 }
