@@ -16,6 +16,12 @@ RUN npm run build
 # Clean dev dependencies
 RUN npm prune --production
 
+# Environment variables injected by docker-compose
+ENV WHATSAPP_ALLOWED_NUMBERS=""
+ENV ANTHROPIC_API_KEY=""
+ENV OPENAI_API_KEY=""
+ENV CLAUDE_CWD="/root"
+
 # Auth state and scheduler data persist via volumes
 VOLUME ["/app/auth-state", "/app/data"]
 
