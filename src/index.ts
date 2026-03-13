@@ -99,16 +99,12 @@ async function main() {
     const jid = getSenderJid(msg);
     logger.info({ jid }, 'incoming message');
 
-    // fromMe messages are from the account owner (linked device), always allowed
-    if (!msg.key.fromMe && !bridge.isAllowed(jid)) {
+    if (!bridge.isAllowed(jid)) {
       logger.warn({ jid }, 'message from non-allowed number, ignoring');
       return;
     }
 
-    // Skip markRead for self-chat (fromMe) to avoid protocol issues
-    if (!msg.key.fromMe) {
-      await whatsapp.markRead(msg);
-    }
+    await whatsapp.markRead(msg);
 
     // Handle text messages
     const text = getMessageText(msg);

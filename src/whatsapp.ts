@@ -93,7 +93,7 @@ export class WhatsAppClient {
           continue;
         }
 
-        if (msg.message) {
+        if (!msg.key.fromMe && msg.message) {
           this.options.onMessage(msg);
         }
       }
