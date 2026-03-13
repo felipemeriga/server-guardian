@@ -23,7 +23,7 @@ export class WhatsAppClient {
   private socket: WASocket | null = null;
   private options: WhatsAppClientOptions;
   private sentMessageIds = new Set<string>();
-  private recentMessages = new Map<string, number>();
+  private lastProcessedAt = 0;
 
   constructor(options: WhatsAppClientOptions) {
     this.options = options;
@@ -104,27 +104,14 @@ export class WhatsAppClient {
         if (isProtocolOnly) continue;
 
         if (msg.message) {
-          // Deduplicate: same message arrives on multiple JIDs with different IDs.
-          // Use message text + timestamp as dedup key within a 5s window.
-          const text =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            msg.message.imageMessage?.caption ||
-            '';
-          const ts = Number(msg.messageTimestamp || 0);
-          const dedupeKey = `${text}:${ts}`;
+          // Throttle: same message arrives on multiple JIDs within milliseconds.
+          // Only process the first one in any 3s window.
           const now = Date.now();
-
-          if (this.recentMessages.has(dedupeKey)) {
+          if (now - this.lastProcessedAt < 3000) {
+            logger.info({ msgId }, 'skipping duplicate (within 3s window)');
             continue;
           }
-
-          this.recentMessages.set(dedupeKey, now);
-          // Prune entries older than 10s
-          for (const [key, time] of this.recentMessages) {
-            if (now - time > 10_000) this.recentMessages.delete(key);
-          }
-
+          this.lastProcessedAt = now;
           this.options.onMessage(msg);
         }
       }
