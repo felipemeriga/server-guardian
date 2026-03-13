@@ -22,8 +22,10 @@ export interface WhatsAppClientOptions {
 export class WhatsAppClient {
   private socket: WASocket | null = null;
   private options: WhatsAppClientOptions;
-  private sentMessageIds = new Set<string>();
   private selfLid: string | null = null;
+  private connectedAt = 0;
+  private sentTexts = new Map<string, number>();
+  private processedIds = new Set<string>();
 
   constructor(options: WhatsAppClientOptions) {
     this.options = options;
@@ -74,7 +76,7 @@ export class WhatsAppClient {
           logger.error('logged out permanently — re-scan QR code');
         }
       } else if (connection === 'open') {
-        // Capture own LID for self-chat filtering
+        this.connectedAt = Math.floor(Date.now() / 1000);
         const user = this.socket?.user;
         if (user?.lid) {
           this.selfLid = user.lid.split(':')[0] + '@lid';
@@ -84,42 +86,45 @@ export class WhatsAppClient {
     });
 
     this.socket.ev.on('messages.upsert', ({ messages, type }) => {
-      // Only process real-time messages, skip history sync
       if (type !== 'notify') return;
 
       for (const msg of messages) {
         const msgId = msg.key.id || '';
-        logger.info(
-          { fromMe: msg.key.fromMe, jid: msg.key.remoteJid, hasMessage: !!msg.message, msgId },
-          'message details',
-        );
 
-        // Skip messages sent by this bot
-        if (this.sentMessageIds.has(msgId)) {
-          this.sentMessageIds.delete(msgId);
-          continue;
+        // 1. Skip already-processed message IDs (covers exact ID duplicates)
+        if (this.processedIds.has(msgId)) continue;
+
+        // 2. Skip protocol-only messages
+        const keys = msg.message ? Object.keys(msg.message) : [];
+        const contentKeys = keys.filter(
+          (k) =>
+            !['protocolMessage', 'messageContextInfo', 'senderKeyDistributionMessage'].includes(k),
+        );
+        if (contentKeys.length === 0) continue;
+
+        // 3. In self-chat: only accept messages on own LID
+        if (this.options.selfJid && this.selfLid) {
+          if (msg.key.remoteJid !== this.selfLid) continue;
         }
 
-        // Skip protocol-only messages (read receipts, etc.)
-        const isProtocolOnly =
-          msg.message &&
-          Object.keys(msg.message).every((k) =>
-            ['protocolMessage', 'messageContextInfo', 'senderKeyDistributionMessage'].includes(k),
-          );
-        if (isProtocolOnly) continue;
+        // 4. Skip old messages (before connection)
+        const msgTs = Number(msg.messageTimestamp || 0);
+        if (msgTs > 0 && msgTs < this.connectedAt - 5) continue;
 
-        // In self-chat mode, only process messages in the user's own chat.
-        if (this.options.selfJid && this.selfLid) {
-          const jid = msg.key.remoteJid || '';
-          if (jid !== this.selfLid) {
-            logger.info({ jid, selfLid: this.selfLid }, 'skipping non-self-chat message');
-            continue;
-          }
+        // 5. Skip messages whose text matches something we recently sent
+        const text = this.extractText(msg);
+        if (text && this.sentTexts.has(text)) continue;
+
+        // Track this ID
+        this.processedIds.add(msgId);
+        if (this.processedIds.size > 500) {
+          const first = this.processedIds.values().next().value!;
+          this.processedIds.delete(first);
         }
 
         if (msg.message) {
           logger.info(
-            { msgId, jid: msg.key.remoteJid, fromMe: msg.key.fromMe },
+            { msgId, jid: msg.key.remoteJid, fromMe: msg.key.fromMe, text: text?.slice(0, 50) },
             'PROCESSING message',
           );
           this.options.onMessage(msg);
@@ -130,10 +135,12 @@ export class WhatsAppClient {
 
   async sendMessage(jid: string, text: string): Promise<void> {
     if (!this.socket) throw new Error('WhatsApp not connected');
-    const sent = await this.socket.sendMessage(jid, { text });
-    if (sent?.key.id) {
-      this.sentMessageIds.add(sent.key.id);
-    }
+
+    // Track sent text to ignore echoes
+    this.sentTexts.set(text, Date.now());
+    setTimeout(() => this.sentTexts.delete(text), 30_000);
+
+    await this.socket.sendMessage(jid, { text });
   }
 
   async sendTyping(jid: string): Promise<void> {
@@ -167,5 +174,14 @@ export class WhatsAppClient {
 
   getSocket(): WASocket | null {
     return this.socket;
+  }
+
+  private extractText(msg: WAMessage): string | null {
+    return (
+      msg.message?.conversation ||
+      msg.message?.extendedTextMessage?.text ||
+      msg.message?.imageMessage?.caption ||
+      null
+    );
   }
 }
