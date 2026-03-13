@@ -23,6 +23,7 @@ export class WhatsAppClient {
   private socket: WASocket | null = null;
   private options: WhatsAppClientOptions;
   private sentMessageIds = new Set<string>();
+  private selfLid: string | null = null;
 
   constructor(options: WhatsAppClientOptions) {
     this.options = options;
@@ -73,7 +74,12 @@ export class WhatsAppClient {
           logger.error('logged out permanently — re-scan QR code');
         }
       } else if (connection === 'open') {
-        logger.info('connected to WhatsApp');
+        // Capture own LID for self-chat filtering
+        const user = this.socket?.user;
+        if (user?.lid) {
+          this.selfLid = user.lid.split(':')[0] + '@lid';
+        }
+        logger.info({ user, selfLid: this.selfLid }, 'connected to WhatsApp');
       }
     });
 
@@ -102,13 +108,12 @@ export class WhatsAppClient {
           );
         if (isProtocolOnly) continue;
 
-        // In self-chat mode, the same message arrives twice:
-        //   1. fromMe:true on @lid (real content)
-        //   2. fromMe:false on @s.whatsapp.net (echo)
-        // Only process LID messages for self-chat; skip the @s.whatsapp.net echo.
-        if (this.options.selfJid) {
+        // In self-chat mode, only process messages in the user's own chat.
+        // The own LID is the "Message Yourself" conversation.
+        // Skip messages to other people's LIDs and @s.whatsapp.net echoes.
+        if (this.options.selfJid && this.selfLid) {
           const jid = msg.key.remoteJid || '';
-          if (!jid.endsWith('@lid') && !jid.endsWith('@g.us')) {
+          if (jid !== this.selfLid) {
             continue;
           }
         }
