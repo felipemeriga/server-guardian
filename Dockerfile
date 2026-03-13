@@ -1,6 +1,6 @@
-FROM node:20-slim
+FROM node:22-slim
 
-# Install Claude CLI
+# Install Claude Code CLI globally
 RUN npm install -g @anthropic-ai/claude-code
 
 WORKDIR /app
@@ -9,14 +9,14 @@ COPY package.json package-lock.json ./
 RUN npm ci --production=false
 
 COPY tsconfig.json ./
-COPY src ./src
+COPY src/ src/
 
 RUN npm run build
 
 # Clean dev dependencies
 RUN npm prune --production
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-  CMD node -e "process.exit(0)"
+# Auth state and scheduler data persist via volumes
+VOLUME ["/app/auth-state", "/app/data"]
 
-ENTRYPOINT ["node", "dist/index.js"]
+CMD ["node", "dist/index.js"]

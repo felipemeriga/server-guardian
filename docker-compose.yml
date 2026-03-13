@@ -9,4 +9,6 @@ services:
       - ./data:/app/data
     environment:
       - WHATSAPP_ALLOWED_NUMBERS=${WHATSAPP_ALLOWED_NUMBERS}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CLAUDE_CWD=${CLAUDE_CWD:-/root}
