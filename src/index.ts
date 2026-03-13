@@ -80,12 +80,7 @@ async function main() {
   }
 
   function getSenderJid(msg: WAMessage): string {
-    const jid = msg.key.remoteJid || '';
-    // LID JIDs can't receive messages — resolve to the allowed number
-    if (jid.endsWith('@lid')) {
-      return config.allowedNumbers[0];
-    }
-    return jid;
+    return msg.key.remoteJid || '';
   }
 
   const whatsapp = new WhatsAppClient({

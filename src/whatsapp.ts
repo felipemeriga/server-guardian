@@ -109,16 +109,19 @@ export class WhatsAppClient {
         if (isProtocolOnly) continue;
 
         // In self-chat mode, only process messages in the user's own chat.
-        // The own LID is the "Message Yourself" conversation.
-        // Skip messages to other people's LIDs and @s.whatsapp.net echoes.
         if (this.options.selfJid && this.selfLid) {
           const jid = msg.key.remoteJid || '';
           if (jid !== this.selfLid) {
+            logger.info({ jid, selfLid: this.selfLid }, 'skipping non-self-chat message');
             continue;
           }
         }
 
         if (msg.message) {
+          logger.info(
+            { msgId, jid: msg.key.remoteJid, fromMe: msg.key.fromMe },
+            'PROCESSING message',
+          );
           this.options.onMessage(msg);
         }
       }
@@ -156,6 +159,10 @@ export class WhatsAppClient {
   async disconnect(): Promise<void> {
     this.socket?.end(undefined);
     this.socket = null;
+  }
+
+  getSelfLid(): string | null {
+    return this.selfLid;
   }
 
   getSocket(): WASocket | null {
