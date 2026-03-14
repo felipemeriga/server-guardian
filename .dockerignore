@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+auth-state
+data
+docs
+*.ogg
+*.wav
+.git

@@ -1,0 +1,14 @@
+services:
+  claude-whatsapp:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ~/.claude:/root/.claude
+      - ~/.config/claude-code:/root/.config/claude-code
+      - ./auth-state:/app/auth-state
+      - ./data:/app/data
+    environment:
+      - WHATSAPP_ALLOWED_NUMBERS=${WHATSAPP_ALLOWED_NUMBERS}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CLAUDE_CWD=${CLAUDE_CWD:-/root}
