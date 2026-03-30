@@ -228,7 +228,7 @@ async function main() {
 
   // Connect to WhatsApp
   await whatsapp.connect();
-  logger.info('claude-whatsapp bridge started');
+  logger.info('server-guardian started');
 }
 
 function sleep(ms: number): Promise<void> {

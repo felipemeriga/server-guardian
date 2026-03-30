@@ -1,7 +1,11 @@
 services:
-  claude-whatsapp:
+  server-guardian:
     build: .
+    image: felipemeriga1/server-guardian:latest
+    container_name: server-guardian
     restart: unless-stopped
+    expose:
+      - '3000'
     volumes:
       - ~/.claude:/root/.claude
       - ~/.config/claude-code:/root/.config/claude-code
@@ -12,3 +16,11 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - CLAUDE_CWD=${CLAUDE_CWD:-/root}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - HTTP_PORT=3000
+    networks:
+      - guardian-net
+
+networks:
+  guardian-net:
+    name: guardian-net
