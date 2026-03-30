@@ -12,6 +12,7 @@ import {
   cleanupTempFile,
   cleanupStaleTempFiles,
 } from './media.js';
+import { createApiServer } from './api.js';
 import type { WAMessage } from 'baileys';
 
 const logger = pino({ name: 'main' });
@@ -225,6 +226,13 @@ async function main() {
 
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
+
+  // Start HTTP API server
+  const startTime = Date.now();
+  const apiServer = createApiServer({ config, claude, whatsapp, startTime });
+  apiServer.listen(config.httpPort, () => {
+    logger.info({ port: config.httpPort }, 'HTTP API server listening');
+  });
 
   // Connect to WhatsApp
   await whatsapp.connect();
