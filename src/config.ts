@@ -7,6 +7,8 @@ export interface Config {
   claudeTimeoutMs: number;
   authStatePath: string;
   schedulerPath: string;
+  internalApiKey: string;
+  httpPort: number;
 }
 
 export function getConfig(): Config {
@@ -27,5 +29,7 @@ export function getConfig(): Config {
     claudeTimeoutMs: 120_000,
     authStatePath: process.env.AUTH_STATE_PATH ?? './auth-state',
     schedulerPath: process.env.SCHEDULER_PATH ?? './data/scheduler.json',
+    internalApiKey: process.env.INTERNAL_API_KEY ?? '',
+    httpPort: parseInt(process.env.HTTP_PORT ?? '3000', 10),
   };
 }
