@@ -66,6 +66,36 @@ export class ClaudeManager {
     }
   }
 
+  async askOnce(
+    prompt: string,
+    options: { system?: string; timeout?: number } = {},
+  ): Promise<string> {
+    this.busy = true;
+
+    try {
+      const args = [
+        '-p',
+        '--verbose',
+        '--output-format',
+        'stream-json',
+        '--dangerously-skip-permissions',
+      ];
+
+      if (options.system) {
+        args.push('--system-prompt', options.system);
+      }
+
+      args.push(prompt);
+
+      logger.info({ prompt: prompt.slice(0, 100) }, 'invoking claude (stateless)');
+
+      return await this.spawnClaude(args, options.timeout);
+    } finally {
+      this.busy = false;
+      this.currentProcess = null;
+    }
+  }
+
   private isSessionError(message: string): boolean {
     const patterns = ['session not found', 'auth', 'expired', 'invalid session'];
     return patterns.some((p) => message.toLowerCase().includes(p));
@@ -79,7 +109,7 @@ export class ClaudeManager {
     }
   }
 
-  private spawnClaude(args: string[]): Promise<string> {
+  private spawnClaude(args: string[], timeoutMs?: number): Promise<string> {
     return new Promise((resolve, reject) => {
       const proc = spawn('claude', args, {
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -101,7 +131,7 @@ export class ClaudeManager {
       const timeout = setTimeout(() => {
         proc.kill('SIGTERM');
         reject(new Error('Claude CLI timed out'));
-      }, this.options.timeoutMs);
+      }, timeoutMs ?? this.options.timeoutMs);
 
       proc.on('close', (code) => {
         clearTimeout(timeout);

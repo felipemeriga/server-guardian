@@ -1,14 +1,38 @@
 services:
-  claude-whatsapp:
+  server-guardian:
     build: .
+    image: felipemeriga1/server-guardian:latest
+    container_name: server-guardian
     restart: unless-stopped
+    expose:
+      - '3000'
     volumes:
       - ~/.claude:/root/.claude
       - ~/.config/claude-code:/root/.config/claude-code
       - ./auth-state:/app/auth-state
       - ./data:/app/data
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)throw r;process.exit(0)}).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
     environment:
       - WHATSAPP_ALLOWED_NUMBERS=${WHATSAPP_ALLOWED_NUMBERS}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - CLAUDE_CWD=${CLAUDE_CWD:-/root}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - HTTP_PORT=3000
+    networks:
+      - guardian-net
+
+networks:
+  guardian-net:
+    name: guardian-net
