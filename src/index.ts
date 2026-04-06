@@ -175,7 +175,10 @@ async function main() {
       // Handle voice
       if (hasAudio(msg)) {
         if (!config.openaiApiKey) {
-          await whatsapp!.sendMessage(jid, 'Voice messages not configured (missing OPENAI_API_KEY).');
+          await whatsapp!.sendMessage(
+            jid,
+            'Voice messages not configured (missing OPENAI_API_KEY).',
+          );
           return;
         }
 
