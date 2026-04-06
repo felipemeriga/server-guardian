@@ -20,7 +20,7 @@ interface NotifyRequestBody {
 interface ApiDependencies {
   config: Config;
   claude: ClaudeManager;
-  whatsapp: WhatsAppClient;
+  whatsapp: WhatsAppClient | null;
   startTime: number;
 }
 
@@ -46,7 +46,8 @@ export function createApiServer({ config, claude, whatsapp, startTime }: ApiDepe
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({
       status: 'ok',
-      whatsapp_connected: whatsapp.isConnected(),
+      mode: whatsapp ? 'full' : 'local',
+      whatsapp_connected: whatsapp?.isConnected() ?? false,
       claude_busy: claude.isBusy(),
       uptime: Math.floor((Date.now() - startTime) / 1000),
     });
@@ -93,7 +94,7 @@ export function createApiServer({ config, claude, whatsapp, startTime }: ApiDepe
           ? body.number
           : `${body.number}@s.whatsapp.net`;
 
-    if (!whatsapp.isConnected()) {
+    if (!whatsapp || !whatsapp.isConnected()) {
       res.status(503).json({ error: 'WhatsApp not connected' });
       return;
     }
