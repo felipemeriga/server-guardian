@@ -1,4 +1,5 @@
 export interface Config {
+  localMode: boolean;
   allowedNumbers: string[];
   openaiApiKey: string | undefined;
   chunkSize: number;
@@ -12,16 +13,23 @@ export interface Config {
 }
 
 export function getConfig(): Config {
+  const localMode = process.env.LOCAL_MODE === 'true';
   const allowedRaw = process.env.WHATSAPP_ALLOWED_NUMBERS;
-  if (!allowedRaw) {
-    throw new Error('WHATSAPP_ALLOWED_NUMBERS environment variable is required');
+
+  if (!localMode && !allowedRaw) {
+    throw new Error(
+      'WHATSAPP_ALLOWED_NUMBERS environment variable is required (or set LOCAL_MODE=true)',
+    );
   }
 
   return {
-    allowedNumbers: allowedRaw.split(',').map((n) => {
-      const trimmed = n.trim();
-      return trimmed.includes('@') ? trimmed : `${trimmed}@s.whatsapp.net`;
-    }),
+    localMode,
+    allowedNumbers: allowedRaw
+      ? allowedRaw.split(',').map((n) => {
+          const trimmed = n.trim();
+          return trimmed.includes('@') ? trimmed : `${trimmed}@s.whatsapp.net`;
+        })
+      : [],
     openaiApiKey: process.env.OPENAI_API_KEY,
     chunkSize: 4000,
     maxQueueSize: 5,
