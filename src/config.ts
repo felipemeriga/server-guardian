@@ -17,7 +17,9 @@ export function getConfig(): Config {
   const allowedRaw = process.env.WHATSAPP_ALLOWED_NUMBERS;
 
   if (!localMode && !allowedRaw) {
-    throw new Error('WHATSAPP_ALLOWED_NUMBERS environment variable is required (or set LOCAL_MODE=true)');
+    throw new Error(
+      'WHATSAPP_ALLOWED_NUMBERS environment variable is required (or set LOCAL_MODE=true)',
+    );
   }
 
   return {
