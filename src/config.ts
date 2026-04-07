@@ -34,7 +34,7 @@ export function getConfig(): Config {
     chunkSize: 4000,
     maxQueueSize: 5,
     chunkDelayMs: 1000,
-    claudeTimeoutMs: 120_000,
+    claudeTimeoutMs: parseInt(process.env.CLAUDE_TIMEOUT_MS ?? '300000', 10),
     authStatePath: process.env.AUTH_STATE_PATH ?? './auth-state',
     schedulerPath: process.env.SCHEDULER_PATH ?? './data/scheduler.json',
     internalApiKey: process.env.INTERNAL_API_KEY ?? '',

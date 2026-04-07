@@ -42,6 +42,6 @@ describe('config', () => {
     expect(config.chunkSize).toBe(4000);
     expect(config.maxQueueSize).toBe(5);
     expect(config.chunkDelayMs).toBe(1000);
-    expect(config.claudeTimeoutMs).toBe(120000);
+    expect(config.claudeTimeoutMs).toBe(300000);
   });
 });
