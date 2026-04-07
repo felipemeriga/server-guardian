@@ -79,7 +79,6 @@ export class ClaudeManager {
         '--output-format',
         'stream-json',
         '--dangerously-skip-permissions',
-        '--fast',
       ];
 
       if (options.system) {
@@ -88,7 +87,7 @@ export class ClaudeManager {
 
       args.push(prompt);
 
-      logger.info({ prompt: prompt.slice(0, 100) }, 'invoking claude (stateless, fast)');
+      logger.info({ prompt: prompt.slice(0, 100) }, 'invoking claude (stateless)');
 
       return await this.spawnClaude(args, options.timeout);
     } finally {
