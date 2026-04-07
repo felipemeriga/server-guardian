@@ -31,6 +31,7 @@ describe('config', () => {
 
   it('throws if WHATSAPP_ALLOWED_NUMBERS is missing', async () => {
     delete process.env.WHATSAPP_ALLOWED_NUMBERS;
+    delete process.env.LOCAL_MODE;
     const { getConfig } = await import('../src/config.js');
     expect(() => getConfig()).toThrow('WHATSAPP_ALLOWED_NUMBERS');
   });
@@ -42,6 +43,6 @@ describe('config', () => {
     expect(config.chunkSize).toBe(4000);
     expect(config.maxQueueSize).toBe(5);
     expect(config.chunkDelayMs).toBe(1000);
-    expect(config.claudeTimeoutMs).toBe(120000);
+    expect(config.claudeTimeoutMs).toBe(900000);
   });
 });

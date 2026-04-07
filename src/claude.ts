@@ -5,6 +5,7 @@ const logger = pino({ name: 'claude' });
 
 interface ClaudeOptions {
   timeoutMs: number;
+  model?: string;
 }
 
 interface SendOptions {
@@ -79,7 +80,16 @@ export class ClaudeManager {
         '--output-format',
         'stream-json',
         '--dangerously-skip-permissions',
+        '--effort',
+        'medium',
+        '--mcp-config',
+        '{"mcpServers":{}}',
+        '--strict-mcp-config',
       ];
+
+      if (this.options.model) {
+        args.push('--model', this.options.model);
+      }
 
       if (options.system) {
         args.push('--system-prompt', options.system);
@@ -87,7 +97,10 @@ export class ClaudeManager {
 
       args.push(prompt);
 
-      logger.info({ prompt: prompt.slice(0, 100) }, 'invoking claude (stateless)');
+      logger.info(
+        { prompt: prompt.slice(0, 100), model: this.options.model ?? 'default' },
+        'invoking claude (stateless)',
+      );
 
       return await this.spawnClaude(args, options.timeout);
     } finally {
@@ -130,7 +143,9 @@ export class ClaudeManager {
 
       const timeout = setTimeout(() => {
         proc.kill('SIGTERM');
-        reject(new Error('Claude CLI timed out'));
+        reject(
+          new Error(`Claude CLI timed out after ${(timeoutMs ?? this.options.timeoutMs) / 1000}s`),
+        );
       }, timeoutMs ?? this.options.timeoutMs);
 
       proc.on('close', (code) => {
