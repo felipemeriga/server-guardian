@@ -143,7 +143,9 @@ export class ClaudeManager {
 
       const timeout = setTimeout(() => {
         proc.kill('SIGTERM');
-        reject(new Error(`Claude CLI timed out after ${(timeoutMs ?? this.options.timeoutMs) / 1000}s`));
+        reject(
+          new Error(`Claude CLI timed out after ${(timeoutMs ?? this.options.timeoutMs) / 1000}s`),
+        );
       }, timeoutMs ?? this.options.timeoutMs);
 
       proc.on('close', (code) => {

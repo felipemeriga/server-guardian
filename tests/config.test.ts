@@ -31,6 +31,7 @@ describe('config', () => {
 
   it('throws if WHATSAPP_ALLOWED_NUMBERS is missing', async () => {
     delete process.env.WHATSAPP_ALLOWED_NUMBERS;
+    delete process.env.LOCAL_MODE;
     const { getConfig } = await import('../src/config.js');
     expect(() => getConfig()).toThrow('WHATSAPP_ALLOWED_NUMBERS');
   });

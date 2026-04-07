@@ -19,7 +19,10 @@ const logger = pino({ name: 'main' });
 
 async function main() {
   const config = getConfig();
-  const claude = new ClaudeManager({ timeoutMs: config.claudeTimeoutMs, model: config.claudeModel });
+  const claude = new ClaudeManager({
+    timeoutMs: config.claudeTimeoutMs,
+    model: config.claudeModel,
+  });
   const bridge = new Bridge(config);
   const scheduler = new Scheduler(config.schedulerPath);
 
